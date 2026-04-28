@@ -283,6 +283,17 @@ const std::array<const char *, NUM_MISCREGS> MiscRegNames = {{
     [MISCREG_HPMCOUNTER31H]  = "HPMCOUNTER31H",
 
     [MISCREG_JVT] = "JVT",
+    
+	// Begin Anticipation Mechanism - ADD THIS BLOCK
+    [MISCREG_APSTATUS] = "APSTATUS",
+	[MISCREG_APLASTEX] = "APLASTEX",
+	[MISCREG_APEPC] = "APEPC",
+	[MISCREG_APSCRATCH] = "APSCRATCH",
+	[MISCREG_APSELECT] = "APSELECT",
+	[MISCREG_APCTRL] = "APCTRL",
+	[MISCREG_APTRIG] = "APTRIG",
+	[MISCREG_APTAR] = "APTAR",
+	// End Anticipation Mechanism
 
     [MISCREG_FFLAGS_EXE]    = "FFLAGS_EXE",
 }};
@@ -976,7 +987,7 @@ ISA::setMiscReg(RegIndex idx, RegVal val)
                 setMiscRegNoEffect(MISCREG_FFLAGS, new_val);
             }
             break;
-          default:
+		  default:
             setMiscRegNoEffect(idx, val);
         }
     }
