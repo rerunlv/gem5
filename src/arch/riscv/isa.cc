@@ -333,6 +333,13 @@ ISA::ISA(const Params &p) : BaseISA(p, "riscv"),
     }
 
     miscRegFile.resize(NUM_PHYS_MISCREGS);
+	
+	// Start Anticipation Mechanism
+    apctrl_vector.assign(NUM_ANTICIPATION_POINTS, 0);
+    aptrig_vector.assign(NUM_ANTICIPATION_POINTS, 0);
+    aptar_vector.assign(NUM_ANTICIPATION_POINTS, 0);
+	// End Anticipation Mechanism
+	
     clear();
 }
 
@@ -370,6 +377,12 @@ ISA::copyRegsFrom(ThreadContext *src)
 void ISA::clear()
 {
     std::fill(miscRegFile.begin(), miscRegFile.end(), 0);
+	
+	// Start Anticipation Mechanism
+    std::fill(apctrl_vector.begin(), apctrl_vector.end(), 0);
+    std::fill(aptrig_vector.begin(), aptrig_vector.end(), 0);
+    std::fill(aptar_vector.begin(), aptar_vector.end(), 0);
+	// End Anticipation Mechanism
 
     miscRegFile[MISCREG_PRV] = PRV_M;
     miscRegFile[MISCREG_VENDORID] = 0;
@@ -683,8 +696,7 @@ ISA::readMiscReg(RegIndex idx)
       case MISCREG_FFLAGS_EXE:
         {
             return readMiscRegNoEffect(MISCREG_FFLAGS) & FFLAGS_MASK;
-        }
-
+      }
       default:
         // Try reading HPM counters
         // As a placeholder, all HPM counters are just cycle counters
@@ -987,8 +999,39 @@ ISA::setMiscReg(RegIndex idx, RegVal val)
                 setMiscRegNoEffect(MISCREG_FFLAGS, new_val);
             }
             break;
-		  default:
-            setMiscRegNoEffect(idx, val);
+
+                // Start Anticipation Mechanism
+            case MISCREG_APSELECT: {
+                // 1. Get the current active index
+                RegVal old_select = readMiscRegNoEffect(MISCREG_APSELECT);
+
+                // 2. Save active registers into the old slot
+                if (old_select < NUM_ANTICIPATION_POINTS) {
+                    apctrl_vector[old_select] =
+                        readMiscRegNoEffect(MISCREG_APCTRL);
+                    aptrig_vector[old_select] =
+                        readMiscRegNoEffect(MISCREG_APTRIG);
+                    aptar_vector[old_select] =
+                        readMiscRegNoEffect(MISCREG_APTAR);
+                }
+
+                // 3. Validate the requested index
+                RegVal new_select = val;
+                if (new_select >= NUM_ANTICIPATION_POINTS) {
+                    new_select = NUM_ANTICIPATION_POINTS - 1;
+                }
+
+                // 4. Load saved vectors and update active slots via standard
+                //        writer
+                setMiscRegNoEffect(MISCREG_APCTRL, apctrl_vector[new_select]);
+                setMiscRegNoEffect(MISCREG_APTRIG, aptrig_vector[new_select]);
+                setMiscRegNoEffect(MISCREG_APTAR, aptar_vector[new_select]);
+                setMiscRegNoEffect(MISCREG_APSELECT, new_select);
+            } break;
+                // End Anticipation Mechanism
+
+            default:
+                setMiscRegNoEffect(idx, val);
         }
     }
 }
@@ -1000,6 +1043,12 @@ ISA::serialize(CheckpointOut &cp) const
 
     DPRINTF(Checkpoint, "Serializing Riscv Misc Registers\n");
     SERIALIZE_CONTAINER(miscRegFile);
+	
+	// Start Anticipation Mechanism
+    SERIALIZE_CONTAINER(apctrl_vector);
+    SERIALIZE_CONTAINER(aptrig_vector);
+    SERIALIZE_CONTAINER(aptar_vector);
+	// End Anticipation Mechanism
 }
 
 void
@@ -1007,6 +1056,12 @@ ISA::unserialize(CheckpointIn &cp)
 {
     DPRINTF(Checkpoint, "Unserializing Riscv Misc Registers\n");
     UNSERIALIZE_CONTAINER(miscRegFile);
+	
+	// Start Anticipation Mechanism
+    UNSERIALIZE_CONTAINER(apctrl_vector);
+    UNSERIALIZE_CONTAINER(aptrig_vector);
+    UNSERIALIZE_CONTAINER(aptar_vector);
+	// End Anticipation Mechanism
 }
 
 void

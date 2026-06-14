@@ -125,6 +125,15 @@ class ISA : public BaseISA
      */
     bool _enableSmrnmi;
 
+	// Start Anticipation Mechanism
+	
+	static constexpr size_t NUM_ANTICIPATION_POINTS = 8;
+    std::vector<RegVal> apctrl_vector;
+    std::vector<RegVal> aptrig_vector;
+    std::vector<RegVal> aptar_vector;
+	
+	// End Anticipation Mechanism
+
   public:
     using Params = RiscvISAParams;
 
