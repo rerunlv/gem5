@@ -291,6 +291,17 @@ enum MiscRegIndex
     MISCREG_HPMCOUNTER30H,
     MISCREG_HPMCOUNTER31H,
     MISCREG_JVT,
+	
+	// Begin Anticipation Mechanism
+	MISCREG_APSTATUS,
+    MISCREG_APLASTEX,
+    MISCREG_APEPC,
+    MISCREG_APSCRATCH,
+    MISCREG_APSELECT,
+    MISCREG_APCTRL,
+    MISCREG_APTRIG,
+    MISCREG_APTAR,
+	// End Anticipation Mechanism
 
     NUM_PHYS_MISCREGS,
     MISCREG_FFLAGS_EXE = NUM_PHYS_MISCREGS,
@@ -573,9 +584,20 @@ enum CSRIndex
     CSR_VSCAUSE   = 0x242,
     CSR_VSTVAL    = 0x243,
     CSR_VSIP      = 0x244,
-    CSR_VSATP     = 0x280
+    CSR_VSATP     = 0x280,
 
     // H-extension (RV64) CSRs end here
+	
+	// Begin Anticipation Mechanism
+    CSR_APSTATUS    = 0x800,
+    CSR_APLASTEX    = 0x801,
+    CSR_APEPC       = 0x802,
+    CSR_APSCRATCH   = 0x803,
+    CSR_APSELECT    = 0x804,
+    CSR_APCTRL      = 0x805,
+    CSR_APTRIG      = 0x806,
+    CSR_APTAR       = 0x807
+	// End Anticipation Mechanism
 };
 
 struct CSRMetadata
@@ -1321,6 +1343,17 @@ const std::unordered_map<int, CSRMetadata> CSRData = {
     {CSR_VSATP,
         {"vsatp", MISCREG_VSATP, rvTypeFlags(RV64),
         isaExtsFlags('h')}},
+	
+	// Begin Anticipation mechanism
+    {CSR_APSTATUS, {"apstatus", MISCREG_APSTATUS, rvTypeFlags(RV64, RV32), isaExtsFlags()}},
+    {CSR_APLASTEX, {"aplastex", MISCREG_APLASTEX, rvTypeFlags(RV64, RV32), isaExtsFlags()}},
+    {CSR_APEPC,    {"apepc",    MISCREG_APEPC,    rvTypeFlags(RV64, RV32), isaExtsFlags()}},
+    {CSR_APSCRATCH,{"apscratch",MISCREG_APSCRATCH,rvTypeFlags(RV64, RV32), isaExtsFlags()}},
+    {CSR_APSELECT, {"apselect", MISCREG_APSELECT, rvTypeFlags(RV64, RV32), isaExtsFlags()}},
+    {CSR_APCTRL,   {"apctrl",   MISCREG_APCTRL,   rvTypeFlags(RV64, RV32), isaExtsFlags()}},
+    {CSR_APTRIG,   {"aptrig",   MISCREG_APTRIG,   rvTypeFlags(RV64, RV32), isaExtsFlags()}},
+    {CSR_APTAR,    {"aptar",    MISCREG_APTAR,    rvTypeFlags(RV64, RV32), isaExtsFlags()}},
+	// End Anticipation mechanism
 };
 
 /**
