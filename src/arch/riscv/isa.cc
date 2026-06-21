@@ -1493,7 +1493,8 @@ updateVPUStatus(
 bool
 ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
 {
-    if (_rvType != RV32) {
+    // Relax check to support both RV32 and RV64 environments
+    if (_rvType != RV32 && _rvType != RV64) {
         return false;
     }
 

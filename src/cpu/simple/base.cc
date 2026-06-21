@@ -547,10 +547,11 @@ BaseSimpleCPU::advancePC(const Fault &fault)
         }
     }
 
-    // Start Anticipation Mechanism
+	// Start Anticipation Mechanism (Cthulu)
     if (fault == NoFault && curStaticInst && curStaticInst->isLastMicroop()) {
         auto riscv_isa = dynamic_cast<RiscvISA::ISA*>(thread->getIsaPtr());
-        if (riscv_isa && riscv_isa->rvType() == RiscvISA::RV32) {
+        // Relax check to run on any RISC-V ISA configuration (both RV32 and RV64)
+        if (riscv_isa) {
             Addr next_pc = thread->pcState().instAddr();
             Addr target_pc = 0;
             if (riscv_isa->checkAnticipationRedirect(next_pc, target_pc)) {
@@ -565,7 +566,7 @@ BaseSimpleCPU::advancePC(const Fault &fault)
             }
         }
     }
-    // End Anticipation Mechanism
+    // End Anticipation Mechanism (Cthulu)
 
     if (branchPred && curStaticInst && curStaticInst->isControl()) {
         // Use a fake sequence number since we only have one
