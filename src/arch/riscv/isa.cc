@@ -1489,6 +1489,61 @@ updateVPUStatus(
     return NoFault;
 }
 
+// Start Anticipation Mechanism
+bool
+ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
+{
+    if (_rvType != RV32) {
+        return false;
+    }
+
+    // Check if the mechanism is globally enabled via APIE (bit 0 of APSTATUS)
+    RegVal apstatus = miscRegFile[MISCREG_APSTATUS];
+    if ((apstatus & 1) == 0) {
+        return false;
+    }
+
+    RegVal active_lane = miscRegFile[MISCREG_APSELECT];
+    if (active_lane >= NUM_ANTICIPATION_POINTS) {
+        return false; // Bounds safety check
+    }
+
+    for (size_t i = 0; i < NUM_ANTICIPATION_POINTS; ++i) {
+        RegVal ctrl = 0;
+        RegVal trig = 0;
+        RegVal tar = 0;
+
+        if (i == active_lane) {
+            ctrl = miscRegFile[MISCREG_APCTRL];
+            trig = miscRegFile[MISCREG_APTRIG];
+            tar = miscRegFile[MISCREG_APTAR];
+        } else {
+            ctrl = apctrl_vector[i];
+            trig = aptrig_vector[i];
+            tar = aptar_vector[i];
+        }
+
+        // Check if the individual lane is enabled (bit 0 of control register)
+        // and if the next program counter matches the lane's trigger address.
+        if ((ctrl & 1) && (next_pc == trig)) {
+            target_pc = tar;
+
+            // Log the triggered lane index in APLASTEX
+            miscRegFile[MISCREG_APLASTEX] = i;
+
+            // Record the preempted destination PC in APEPC
+            miscRegFile[MISCREG_APEPC] = next_pc;
+
+            // Clear the global APIE enable bit (bit 0 of APSTATUS)
+            miscRegFile[MISCREG_APSTATUS] &= ~1ULL;
+
+            return true;
+        }
+    }
+
+    return false;
+}
+// End Anticipation Mechanism
 
 } // namespace RiscvISA
 } // namespace gem5
