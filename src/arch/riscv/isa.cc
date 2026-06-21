@@ -1493,20 +1493,24 @@ updateVPUStatus(
 bool
 ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
 {
-    // Relax check to support both RV32 and RV64 environments
     if (_rvType != RV32 && _rvType != RV64) {
         return false;
     }
 
-    // Check if the mechanism is globally enabled via APIE (bit 0 of APSTATUS)
     RegVal apstatus = miscRegFile[MISCREG_APSTATUS];
+    
+    // UNRESTRICTED DEBUG PRINT: Will print on every instruction commit
+    std::cout << "[Cthulu Debug] next_pc = 0x" << std::hex << next_pc 
+              << " | APIE (APSTATUS[0]) = " << (apstatus & 1) 
+              << " | APSELECT = " << miscRegFile[MISCREG_APSELECT] << std::endl;
+
     if ((apstatus & 1) == 0) {
         return false;
     }
 
     RegVal active_lane = miscRegFile[MISCREG_APSELECT];
     if (active_lane >= NUM_ANTICIPATION_POINTS) {
-        return false; // Bounds safety check
+        return false; 
     }
 
     for (size_t i = 0; i < NUM_ANTICIPATION_POINTS; ++i) {
@@ -1524,19 +1528,20 @@ ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
             tar = aptar_vector[i];
         }
 
-        // Check if the individual lane is enabled (bit 0 of control register)
-        // and if the next program counter matches the lane's trigger address.
+        // UNRESTRICTED DEBUG PRINT
+        std::cout << "  -> Lane " << i 
+                  << ": Ctrl = 0x" << std::hex << ctrl 
+                  << " | Trig = 0x" << trig 
+                  << " | Tar = 0x" << tar << std::endl;
+
         if ((ctrl & 1) && (next_pc == trig)) {
             target_pc = tar;
 
-            // Log the triggered lane index in APLASTEX
             miscRegFile[MISCREG_APLASTEX] = i;
-
-            // Record the preempted destination PC in APEPC
             miscRegFile[MISCREG_APEPC] = next_pc;
-
-            // Clear the global APIE enable bit (bit 0 of APSTATUS)
             miscRegFile[MISCREG_APSTATUS] &= ~1ULL;
+
+            std::cout << "  *** TRIGGER MATCHED! Redirecting to 0x" << std::hex << target_pc << " ***" << std::endl;
 
             return true;
         }
