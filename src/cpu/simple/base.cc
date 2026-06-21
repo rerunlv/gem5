@@ -65,6 +65,11 @@
 #include "debug/Fetch.hh"
 #include "debug/HtmCpu.hh"
 #include "debug/Quiesce.hh"
+
+// Start Anticipation Mechanism
+#include "arch/riscv/isa.hh"
+// End Anticipation Mechanism
+
 #include "mem/packet.hh"
 #include "mem/request.hh"
 #include "params/BaseSimpleCPU.hh"
@@ -541,6 +546,27 @@ BaseSimpleCPU::advancePC(const Fault &fault)
             curStaticInst->advancePC(thread);
         }
     }
+
+	// Start Anticipation Mechanism (Cthulu)
+    if (fault == NoFault && curStaticInst && curStaticInst->isLastMicroop()) {
+        auto riscv_isa = dynamic_cast<RiscvISA::ISA*>(thread->getIsaPtr());
+        // Relax check to run on any RISC-V ISA configuration (both RV32 and RV64)
+        if (riscv_isa) {
+            Addr next_pc = thread->pcState().instAddr();
+            Addr target_pc = 0;
+            if (riscv_isa->checkAnticipationRedirect(next_pc, target_pc)) {
+                // Initialize a clean PCState using the helper to clear 
+                // any transient compressed (RVC) or Zcmt flags.
+                thread->pcState(target_pc);
+
+                // Clear the fetch offset and reset the decoder to flush 
+                // stale pre-decoded instruction bytes.
+                t_info.fetchOffset = 0;
+                thread->getDecoderPtr()->reset();
+            }
+        }
+    }
+    // End Anticipation Mechanism (Cthulu)
 
     if (branchPred && curStaticInst && curStaticInst->isControl()) {
         // Use a fake sequence number since we only have one

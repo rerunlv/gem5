@@ -235,6 +235,10 @@ class ISA : public BaseISA
     RegVal backdoorReadCSRAllBits(ExecContext *xc, uint64_t csr);
     RegVal readCSR(ExecContext *xc, uint64_t csr);
     void writeCSR(ExecContext *xc, uint64_t csr, RegVal writeData);
+	
+	// Start Anticipation Mechanism
+    bool checkAnticipationRedirect(Addr next_pc, Addr &target_pc);
+    // End Anticipation Mechanism
 };
 
 // V-bit utilities (H-extension)
