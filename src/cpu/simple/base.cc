@@ -547,17 +547,18 @@ BaseSimpleCPU::advancePC(const Fault &fault)
         }
     }
 
-	// Start Anticipation Mechanism (Cthulu)
+    // Start Anticipation Mechanism (Cthulu)
+    std::cout << "TEMP DEBUG\n";
     if (fault == NoFault && curStaticInst && curStaticInst->isLastMicroop()) {
-        auto riscv_isa = dynamic_cast<RiscvISA::ISA*>(thread->getIsaPtr());
-        // Relax check to run on any RISC-V ISA configuration (both RV32 and RV64)
+        auto riscv_isa = static_cast<RiscvISA::ISA*>(thread->getIsaPtr());
         if (riscv_isa) {
             Addr next_pc = thread->pcState().instAddr();
             Addr target_pc = 0;
             if (riscv_isa->checkAnticipationRedirect(next_pc, target_pc)) {
-                // Initialize a clean PCState using the helper to clear 
-                // any transient compressed (RVC) or Zcmt flags.
-                thread->pcState(target_pc);
+                // Instantiates a clean target PCState, clearing old 
+                // compressed or Zcmt execution flags
+                std::unique_ptr<PCStateBase> new_pc(thread->getIsaPtr()->newPCState(target_pc));
+                thread->pcState(*new_pc);
 
                 // Clear the fetch offset and reset the decoder to flush 
                 // stale pre-decoded instruction bytes.
