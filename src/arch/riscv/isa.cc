@@ -1499,12 +1499,10 @@ ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
 
     RegVal apstatus = miscRegFile[MISCREG_APSTATUS];
     
-    // TEMPORARY DEBUG PRINT: Remove after troubleshooting
-    if (next_pc >= 0x10000 && next_pc <= 0x12000) { // Limit prints to main program region
-        std::cout << "[Cthulu Debug] PC: 0x" << std::hex << next_pc 
-                  << " | APIE: " << (apstatus & 1) 
-                  << " | APSELECT: " << miscRegFile[MISCREG_APSELECT] << std::endl;
-    }
+    // UNRESTRICTED DEBUG PRINT: Will print on every instruction commit
+    std::cout << "[Cthulu Debug] next_pc = 0x" << std::hex << next_pc 
+              << " | APIE (APSTATUS[0]) = " << (apstatus & 1) 
+              << " | APSELECT = " << miscRegFile[MISCREG_APSELECT] << std::endl;
 
     if ((apstatus & 1) == 0) {
         return false;
@@ -1530,13 +1528,11 @@ ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
             tar = aptar_vector[i];
         }
 
-        // TEMPORARY DEBUG PRINT: Remove after troubleshooting
-        if (next_pc >= 0x10000 && next_pc <= 0x12000) {
-            std::cout << "  -> Lane " << i 
-                      << ": Ctrl=0x" << std::hex << ctrl 
-                      << " | Trig=0x" << trig 
-                      << " | Tar=0x" << tar << std::endl;
-        }
+        // UNRESTRICTED DEBUG PRINT
+        std::cout << "  -> Lane " << i 
+                  << ": Ctrl = 0x" << std::hex << ctrl 
+                  << " | Trig = 0x" << trig 
+                  << " | Tar = 0x" << tar << std::endl;
 
         if ((ctrl & 1) && (next_pc == trig)) {
             target_pc = tar;
