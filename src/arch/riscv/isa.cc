@@ -1498,11 +1498,6 @@ ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
     }
 
     RegVal apstatus = miscRegFile[MISCREG_APSTATUS];
-    
-    // UNRESTRICTED DEBUG PRINT: Will print on every instruction commit
-    std::cout << "[Cthulu Debug] next_pc = 0x" << std::hex << next_pc 
-              << " | APIE (APSTATUS[0]) = " << (apstatus & 1) 
-              << " | APSELECT = " << miscRegFile[MISCREG_APSELECT] << std::endl;
 
     if ((apstatus & 1) == 0) {
         return false;
