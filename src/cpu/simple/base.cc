@@ -547,14 +547,16 @@ BaseSimpleCPU::advancePC(const Fault &fault)
         }
     }
 
-    // Start Anticipation Mechanism (Cthulu)
-    std::cout << "TEMP DEBUG\n";
+    // Start Anticipation Mechanism
     if (fault == NoFault && curStaticInst && curStaticInst->isLastMicroop()) {
-        auto riscv_isa = static_cast<RiscvISA::ISA*>(thread->getIsaPtr());
+		std::cout << "First IF\n";
+        auto riscv_isa = thread->getIsaPtr();//static_cast<RiscvISA::ISA*>();
         if (riscv_isa) {
+			std::cout << "Second IF\n";
             Addr next_pc = thread->pcState().instAddr();
             Addr target_pc = 0;
             if (riscv_isa->checkAnticipationRedirect(next_pc, target_pc)) {
+				std::cout << "Third IF\n";
                 // Instantiates a clean target PCState, clearing old 
                 // compressed or Zcmt execution flags
                 std::unique_ptr<PCStateBase> new_pc(thread->getIsaPtr()->newPCState(target_pc));
