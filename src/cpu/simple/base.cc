@@ -550,7 +550,7 @@ BaseSimpleCPU::advancePC(const Fault &fault)
     // Start Anticipation Mechanism
     if (fault == NoFault && curStaticInst && curStaticInst->isLastMicroop()) {
 		std::cout << "First IF\n";
-        auto riscv_isa = thread->getIsaPtr();//static_cast<RiscvISA::ISA*>();
+        auto riscv_isa = static_cast<RiscvISA::ISA*>(thread->getIsaPtr());
         if (riscv_isa) {
 			std::cout << "Second IF\n";
             Addr next_pc = thread->pcState().instAddr();
@@ -569,7 +569,7 @@ BaseSimpleCPU::advancePC(const Fault &fault)
             }
         }
     }
-    // End Anticipation Mechanism (Cthulu)
+    // End Anticipation Mechanism
 
     if (branchPred && curStaticInst && curStaticInst->isControl()) {
         // Use a fake sequence number since we only have one
