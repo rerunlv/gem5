@@ -1535,15 +1535,24 @@ ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
                   << " | Tar = 0x" << tar << std::endl;
 
         if ((ctrl & 1) && (next_pc == trig)) {
-            target_pc = tar;
+			if (ctrl & 0b100) {
+				if (i == active_lane) {
+					miscRegFile[MISCREG_APCTRL] = ctrl &! 0b100;
+				} else {
+					apctrl_vector[i] = ctrl &! 0b100;
+				}
+			}
+			else {
+				target_pc = tar;
 
-            miscRegFile[MISCREG_APLASTEX] = i;
-            miscRegFile[MISCREG_APEPC] = next_pc;
-            miscRegFile[MISCREG_APSTATUS] &= ~1ULL;
+				miscRegFile[MISCREG_APLASTEX] = i;
+				miscRegFile[MISCREG_APEPC] = next_pc;
+				miscRegFile[MISCREG_APSTATUS] &= ~1ULL;
 
-            std::cout << "  *** TRIGGER MATCHED! Redirecting to 0x" << std::hex << target_pc << " ***" << std::endl;
+				std::cout << "  *** TRIGGER MATCHED! Redirecting to 0x" << std::hex << target_pc << " ***" << std::endl;
 
-            return true;
+				return true;
+			}
         }
     }
 
