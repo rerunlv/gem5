@@ -1534,7 +1534,7 @@ ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
 				if (i == active_lane) {
 					miscRegFile[MISCREG_APCTRL] = ctrl &! 0b100;
 				} else {
-					apctrl_vector[i] = ctrl &! 0b100
+					apctrl_vector[i] = ctrl &! 0b100;
 				}
 			}
 			else {
