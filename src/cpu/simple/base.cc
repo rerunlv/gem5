@@ -65,6 +65,11 @@
 #include "debug/Fetch.hh"
 #include "debug/HtmCpu.hh"
 #include "debug/Quiesce.hh"
+
+// Start Anticipation Mechanism
+#include "arch/riscv/isa.hh"
+// End Anticipation Mechanism
+
 #include "mem/packet.hh"
 #include "mem/request.hh"
 #include "params/BaseSimpleCPU.hh"
@@ -541,6 +546,29 @@ BaseSimpleCPU::advancePC(const Fault &fault)
             curStaticInst->advancePC(thread);
         }
     }
+
+    // Start Anticipation Mechanism
+    if (fault == NoFault && curStaticInst) {
+		if  ( (!curStaticInst->isMicroop()) || curStaticInst->isLastMicroop() ) {
+			auto riscv_isa = static_cast<RiscvISA::ISA*>(thread->getIsaPtr());
+			if (riscv_isa) {
+				Addr next_pc = thread->pcState().instAddr();
+				Addr target_pc = 0;
+				if (riscv_isa->checkAnticipationRedirect(next_pc, target_pc)) {
+					// Instantiates a clean target PCState, clearing old 
+					// compressed or Zcmt execution flags
+					std::unique_ptr<PCStateBase> new_pc(thread->getIsaPtr()->newPCState(target_pc));
+					thread->pcState(*new_pc);
+
+					// Clear the fetch offset and reset the decoder to flush 
+					// stale pre-decoded instruction bytes.
+					t_info.fetchOffset = 0;
+					thread->getDecoderPtr()->reset();
+				}
+			}
+		}
+    }
+    // End Anticipation Mechanism
 
     if (branchPred && curStaticInst && curStaticInst->isControl()) {
         // Use a fake sequence number since we only have one

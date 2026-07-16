@@ -1489,6 +1489,71 @@ updateVPUStatus(
     return NoFault;
 }
 
+// Start Anticipation Mechanism
+bool
+ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
+{
+    if (_rvType != RV32 && _rvType != RV64) {
+        return false;
+    }
+
+    RegVal apstatus = miscRegFile[MISCREG_APSTATUS];
+
+    if ((apstatus & 1) == 0) {
+        return false;
+    }
+
+    RegVal active_lane = miscRegFile[MISCREG_APSELECT];
+    if (active_lane >= NUM_ANTICIPATION_POINTS) {
+        return false; 
+    }
+
+    for (size_t i = 0; i < NUM_ANTICIPATION_POINTS; ++i) {
+        RegVal ctrl = 0;
+        RegVal trig = 0;
+        RegVal tar = 0;
+
+        if (i == active_lane) {
+            ctrl = miscRegFile[MISCREG_APCTRL];
+            trig = miscRegFile[MISCREG_APTRIG];
+            tar = miscRegFile[MISCREG_APTAR];
+        } else {
+            ctrl = apctrl_vector[i];
+            trig = aptrig_vector[i];
+            tar = aptar_vector[i];
+        }
+
+        // UNRESTRICTED DEBUG PRINT
+        std::cout << "  -> Lane " << i 
+                  << ": Ctrl = 0x" << std::hex << ctrl 
+                  << " | Trig = 0x" << trig 
+                  << " | Tar = 0x" << tar << std::endl;
+
+        if ((ctrl & 1) && (next_pc == trig)) {
+			if (ctrl & 0b100) {
+				if (i == active_lane) {
+					miscRegFile[MISCREG_APCTRL] = ctrl &! 0b100;
+				} else {
+					apctrl_vector[i] = ctrl &! 0b100;
+				}
+			}
+			else {
+				target_pc = tar;
+
+				miscRegFile[MISCREG_APLASTEX] = i;
+				miscRegFile[MISCREG_APEPC] = next_pc;
+				miscRegFile[MISCREG_APSTATUS] &= ~1ULL;
+
+				std::cout << "  *** TRIGGER MATCHED! Redirecting to 0x" << std::hex << target_pc << " ***" << std::endl;
+
+				return true;
+			}
+        }
+    }
+
+    return false;
+}
+// End Anticipation Mechanism
 
 } // namespace RiscvISA
 } // namespace gem5
