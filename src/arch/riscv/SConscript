@@ -49,7 +49,8 @@ if not env['CONF']['USE_RISCV_ISA']:
 
 env.TagImplies('riscv isa', 'gem5 lib')
 
-GTest('anticipation.test', 'anticipation.test.cc')
+GTest('anticipation.test', 'anticipation.test.cc', '../../base/date.cc',
+    with_tag('gem5 lib') & without_tag('main'), skip_lib=True)
 
 env.TagImplies('isa', 'riscv isa')
 
