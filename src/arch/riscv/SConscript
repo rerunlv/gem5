@@ -49,6 +49,8 @@ if not env['CONF']['USE_RISCV_ISA']:
 
 env.TagImplies('riscv isa', 'gem5 lib')
 
+GTest('anticipation.test', 'anticipation.test.cc')
+
 env.TagImplies('isa', 'riscv isa')
 
 Source('decoder.cc', tags=['riscv isa'])
