@@ -539,14 +539,14 @@ decode QUADRANT default Unknown::unknown() {
         format JOp {
             0x02: apret({{
                 uint64_t apctrl = xc->readMiscReg(MISCREG_APCTRL);
-                apctrl &= ~(1 << 2);
+                apctrl &= ~(1 << 1);
                 xc->setMiscReg(MISCREG_APCTRL, apctrl);
                 
                 uint64_t apstatus = xc->readMiscReg(MISCREG_APSTATUS);
-                apstatus |= ~(1 << 0);
+                apstatus |= (1 << 0);
                 xc->setMiscReg(MISCREG_APSTATUS, apstatus);
 
-                NPC = xc->readMiscReg(MISCREG_APEPC);;
+                NPC = xc->readMiscReg(MISCREG_APEPC);
             }}, IsDirectControl, IsUncondControl);
         }
     // BUNDLEP End
