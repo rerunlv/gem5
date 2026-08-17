@@ -1529,8 +1529,8 @@ ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
                   << " | Trig = 0x" << trig 
                   << " | Tar = 0x" << tar << std::endl;
 
-        if ((ctrl & 1) && (next_pc == trig)) {
-			if (ctrl & 0b100) {
+        if ((ctrl & 1) && (next_pc == rvSext(trig))) {
+    			if (ctrl & 0b100) {
 				if (i == active_lane) {
 					miscRegFile[MISCREG_APCTRL] = ctrl &! 0b100;
 				} else {
