@@ -535,17 +535,13 @@ decode QUADRANT default Unknown::unknown() {
         }
     }
     0x3: decode OPCODE5 {
-    // BUNDLEP Begin
+    // Begin Anticipation Mechanism
         format JOp {
             0x02: apret({{
-                uint64_t apstatus = xc->readMiscReg(MISCREG_APSTATUS);
-                apstatus |= (1 << 0);
-                xc->setMiscReg(MISCREG_APSTATUS, apstatus);
-
                 NPC = xc->readMiscReg(MISCREG_APEPC);
             }}, IsDirectControl, IsUncondControl);
         }
-    // BUNDLEP End
+    // End Anticipation Mechanism
         0x00: decode FUNCT3 {
             format Load {
                 0x0: lb({{
