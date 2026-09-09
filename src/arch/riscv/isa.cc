@@ -382,6 +382,9 @@ void ISA::clear()
     std::fill(apctrl_vector.begin(), apctrl_vector.end(), 0);
     std::fill(aptrig_vector.begin(), aptrig_vector.end(), 0);
     std::fill(aptar_vector.begin(), aptar_vector.end(), 0);
+    miscRegFile[MISCREG_APSTATUS] =
+        ((static_cast<RegVal>(NUM_ANTICIPATION_POINTS) & 0xFF) << 8) |
+        ((static_cast<RegVal>(ANTICIPATION_REV) & 0x7F) << 1);
 	// End Anticipation Mechanism
 
     miscRegFile[MISCREG_PRV] = PRV_M;
@@ -992,7 +995,7 @@ ISA::setMiscReg(RegIndex idx, RegVal val)
             }
             break;
 
-          case MISCREG_FFLAGS_EXE:
+		  case MISCREG_FFLAGS_EXE:
             {
                 RegVal new_val = readMiscRegNoEffect(MISCREG_FFLAGS);
                 new_val |= (val & FFLAGS_MASK);
@@ -1000,8 +1003,15 @@ ISA::setMiscReg(RegIndex idx, RegVal val)
             }
             break;
 
-                // Start Anticipation Mechanism
-            case MISCREG_APSELECT: {
+          // Start Anticipation Mechanism
+          case MISCREG_APSTATUS: {
+                RegVal ro_fields =
+                    ((static_cast<RegVal>(NUM_ANTICIPATION_POINTS) & 0xFF) << 8) |
+                    ((static_cast<RegVal>(ANTICIPATION_REV) & 0x7F) << 1);
+                setMiscRegNoEffect(MISCREG_APSTATUS, ro_fields | (val & 0x1));
+            } break;
+
+          case MISCREG_APSELECT: {
                 // 1. Get the current active index
                 RegVal old_select = readMiscRegNoEffect(MISCREG_APSELECT);
 
@@ -1028,7 +1038,7 @@ ISA::setMiscReg(RegIndex idx, RegVal val)
                 setMiscRegNoEffect(MISCREG_APTAR, aptar_vector[new_select]);
                 setMiscRegNoEffect(MISCREG_APSELECT, new_select);
             } break;
-                // End Anticipation Mechanism
+            // End Anticipation Mechanism
 
             default:
                 setMiscRegNoEffect(idx, val);
@@ -1529,20 +1539,21 @@ ISA::checkAnticipationRedirect(Addr next_pc, Addr &target_pc)
                   << " | Trig = 0x" << trig 
                   << " | Tar = 0x" << tar << std::endl;
 
-        if ((ctrl & 1) && (next_pc == trig)) {
-			if (ctrl & 0b100) {
+		if ((ctrl & 1) && (next_pc == rvSext(trig))) {
+			uint64_t aps = (ctrl >> 2) & 0x7;
+			if (aps > 0) {
+				aps--;
+				RegVal new_ctrl = (ctrl & ~static_cast<RegVal>(0x7 << 2)) | (aps << 2);
 				if (i == active_lane) {
-					miscRegFile[MISCREG_APCTRL] = ctrl &! 0b100;
+					miscRegFile[MISCREG_APCTRL] = new_ctrl;
 				} else {
-					apctrl_vector[i] = ctrl &! 0b100;
+					apctrl_vector[i] = new_ctrl;
 				}
-			}
-			else {
+			} else {
 				target_pc = tar;
 
 				miscRegFile[MISCREG_APLASTEX] = i;
 				miscRegFile[MISCREG_APEPC] = next_pc;
-				miscRegFile[MISCREG_APSTATUS] &= ~1ULL;
 
 				std::cout << "  *** TRIGGER MATCHED! Redirecting to 0x" << std::hex << target_pc << " ***" << std::endl;
 

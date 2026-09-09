@@ -128,6 +128,7 @@ class ISA : public BaseISA
 	// Start Anticipation Mechanism
 	
 	static constexpr size_t NUM_ANTICIPATION_POINTS = 8;
+	static constexpr uint8_t ANTICIPATION_REV = 1;
     std::vector<RegVal> apctrl_vector;
     std::vector<RegVal> aptrig_vector;
     std::vector<RegVal> aptar_vector;
